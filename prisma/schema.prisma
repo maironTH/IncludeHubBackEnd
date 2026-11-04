@@ -71,7 +71,7 @@ cliente          String?       // Opcional para projetos internos
 gerenteId        Int?          // Opcional para projetos internos
 horasContratadas Int?          // Opcional para projetos internos
 status           StatusProjeto @default(NO_PRAZO)
-inicio           DateTime      @db.Date
+inicio           DateTime?      @db.Date
 fimPrevisto      DateTime?     @db.Date
 ativo            Boolean       @default(true)
 
@@ -113,6 +113,9 @@ descricao    String?
 pessoa  Pessoa  @relation(fields: [pessoaId], references: [id])
 projeto Projeto @relation(fields: [projetoId], references: [id])
 
+// Necessário para o Batch Upsert: uma pessoa não pode ter dois registros
+// para o mesmo projeto na mesma semana.
+@@unique([pessoaId, projetoId, semanaInicio])
 @@map("lancamentos")
 }
 
