@@ -1,0 +1,132 @@
+generator client {
+provider = "prisma-client-js"
+}
+
+datasource db {
+provider = "postgresql"
+url      = env("DATABASE_URL")
+}
+
+// -----------------------------------------------------
+// ENUMS
+// -----------------------------------------------------
+
+enum Papel {
+ADMIN
+GERENTE
+COLABORADOR
+}
+
+enum TipoProjeto {
+CLIENTE
+INTERNO
+}
+
+enum StatusProjeto {
+NO_PRAZO
+EM_RISCO
+ATRASADO
+}
+
+// -----------------------------------------------------
+// MODELS
+// -----------------------------------------------------
+
+model Categoria {
+id        Int        @id @default(autoincrement())
+nome      String     @unique
+
+// Relacionamentos
+pessoas   Pessoa[]
+alocacoes Alocacao[]
+
+@@map("categorias")
+}
+
+model Pessoa {
+id              Int       @id @default(autoincrement())
+nome            String
+email           String    @unique
+senhaHash       String
+papel           Papel
+categoriaId     Int?
+horasSemanais   Int
+ativo           Boolean   @default(true)
+
+// Relacionamentos
+categoria           Categoria?        @relation(fields: [categoriaId], references: [id])
+projetosGerenciados Projeto[]         @relation("GerenteProjeto")
+alocacoes           Alocacao[]
+lancamentos         Lancamento[]
+historicoAlterado   HistoricoStatus[] @relation("AlteradoPorPessoa")
+
+@@map("pessoas")
+}
+
+model Projeto {
+id               Int           @id @default(autoincrement())
+nome             String
+tipo             TipoProjeto
+cliente          String?       // Opcional para projetos internos
+gerenteId        Int?          // Opcional para projetos internos
+horasContratadas Int?          // Opcional para projetos internos
+status           StatusProjeto @default(NO_PRAZO)
+inicio           DateTime      @db.Date
+fimPrevisto      DateTime?     @db.Date
+ativo            Boolean       @default(true)
+
+// Relacionamentos
+gerente         Pessoa?           @relation("GerenteProjeto", fields: [gerenteId], references: [id])
+alocacoes       Alocacao[]
+lancamentos     Lancamento[]
+historicoStatus HistoricoStatus[]
+
+@@map("projetos")
+}
+
+model Alocacao {
+id                   Int       @id @default(autoincrement())
+pessoaId             Int
+projetoId            Int
+categoriaId          Int
+horasPrevistasSemana Decimal   @db.Decimal(5, 2)
+inicio               DateTime  @db.Date
+fim                  DateTime? @db.Date // Vazio = em aberto
+
+// Relacionamentos
+pessoa    Pessoa    @relation(fields: [pessoaId], references: [id])
+projeto   Projeto   @relation(fields: [projetoId], references: [id])
+categoria Categoria @relation(fields: [categoriaId], references: [id])
+
+@@map("alocacoes")
+}
+
+model Lancamento {
+id           Int      @id @default(autoincrement())
+pessoaId     Int
+projetoId    Int
+semanaInicio DateTime @db.Date // Sempre a data da segunda-feira
+horas        Decimal  @db.Decimal(5, 2)
+descricao    String?
+
+// Relacionamentos
+pessoa  Pessoa  @relation(fields: [pessoaId], references: [id])
+projeto Projeto @relation(fields: [projetoId], references: [id])
+
+@@map("lancamentos")
+}
+
+model HistoricoStatus {
+id            Int           @id @default(autoincrement())
+projetoId     Int
+status        StatusProjeto
+justificativa String?
+alteradoPorId Int
+criadoEm      DateTime      @default(now())
+
+// Relacionamentos
+projeto     Projeto @relation(fields: [projetoId], references: [id])
+alteradoPor Pessoa  @relation("AlteradoPorPessoa", fields: [alteradoPorId], references: [id])
+
+@@map("historico_status")
+}

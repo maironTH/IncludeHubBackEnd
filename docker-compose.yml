@@ -1,0 +1,11 @@
+services:                          # a lista de "caixinhas" que o Docker deve rodar
+  db:                              # nome da nossa caixinha (escolhi "db")
+    image: postgres:16             # usa o Postgres versão 16 (baixa na primeira vez)
+    environment:                   # configurações usadas na PRIMEIRA vez que liga:
+      POSTGRES_USER: includehub    #   cria este usuário
+      POSTGRES_PASSWORD: includehub  # com esta senha
+      POSTGRES_DB: includehub      #   e cria um banco com este nome
+    ports: ["5432:5432"]           # liga a porta 5432 do seu PC à 5432 da caixinha
+    volumes: [pgdata:/var/lib/postgresql/data]   # guarda os dados num "cofre" fora da caixinha
+volumes:
+  pgdata:                          # cria o cofre. Sem ele, os dados sumiriam ao desligar
