@@ -3,6 +3,7 @@ import cors from "cors";
 import { prisma } from "./lib/prisma";
 import { pessoasRoutes } from "./modules/pessoas/pessoas.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
+import { tratarErros } from "./middlewares/tratar-erros";
 
 
 export const app = express();
@@ -30,3 +31,4 @@ app.get("/api/projetos", async (_req, res) => {
     res.status(500).json({ erro: "Erro ao buscar projetos", detalhe: error });
   }
 });
+app.use(tratarErros);
