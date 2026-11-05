@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import { ErroHttp } from "../lib/erros";
+import { ErroDominio } from "../domain/erros";
 
 // O Express reconhece um middleware de erros pelos 4 parâmetros.
 // Por isso o `_next` precisa existir, mesmo sem uso.
@@ -9,6 +10,12 @@ export function tratarErros(erro: unknown, _req: Request, res: Response, _next: 
   // Erros que nós mesmos lançamos
   if (erro instanceof ErroHttp) {
     res.status(erro.status).json({ erro: erro.message });
+    return;
+  }
+
+  // Erros de regras/cálculos do domínio (dados inválidos)
+  if (erro instanceof ErroDominio) {
+    res.status(422).json({ erro: erro.message });
     return;
   }
 
