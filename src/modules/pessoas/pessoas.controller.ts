@@ -21,7 +21,7 @@ export class PessoasController {
     try {
       const id = Number(req.params.id);
       if (isNaN(id)) {
-        throw new ErroHttp(400, "ID inválido informado na URL");
+        throw new ErroHttp(422, "ID inválido informado na URL");
       }
 
       const resultado = await this.service.obterPorId(id);
@@ -44,7 +44,7 @@ export class PessoasController {
     try {
       const id = Number(req.params.id);
       if (isNaN(id)) {
-        throw new ErroHttp(400, "ID inválido informado na URL");
+        throw new ErroHttp(422, "ID inválido informado na URL");
       }
 
       const usuario = req.user!;
