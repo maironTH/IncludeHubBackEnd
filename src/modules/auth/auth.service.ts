@@ -1,28 +1,25 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { AuthRepository } from './auth.repository';
+import { pessoasRepository, PessoasRepository } from '../pessoas/pessoas.repository';
+import { ErroHttp } from '../../lib/erros';
+import { config } from '../../lib/config';
 
-const authRepository = new AuthRepository();
 
 export class AuthService {
   async login(email: string, senhaLimpa: string) {
-    const pessoa = await authRepository.buscarPorEmail(email);
+    const pessoa = await pessoasRepository.encontrarAtivaPorEmail(email);
 
-    // Verifica se usuário existe e se não foi inativado
-    if (!pessoa || !pessoa.ativo) {
-      throw new Error('Credenciais inválidas ou usuário inativo');
-    }
-
-    const senhaValida = await bcrypt.compare(senhaLimpa, pessoa.senhaHash);
-    if (!senhaValida) {
-      throw new Error('Credenciais inválidas ou usuário inativo');
+    const senhaValida = pessoa? await bcrypt.compare(senhaLimpa, pessoa.senhaHash): false;
+    
+    if (!pessoa || !senhaValida) {
+      throw new ErroHttp(401, "E-mail ou senha inválidos");
     }
 
     // O dotenv-safe garante que as variáveis existam
     const token = jwt.sign(
       { id: pessoa.id, papel: pessoa.papel },
-      (process.env.JWT_SECRET || 'secret') as jwt.Secret,
-      { expiresIn: (process.env.JWT_EXPIRES || '8h') as any }
+      (config.JWT_SECRET || 'secret') as jwt.Secret,
+      { expiresIn: (config.JWT_EXPIRES || "8h") as any }
     );
 
     // Tira o hash da senha antes de retornar
@@ -35,9 +32,9 @@ export class AuthService {
   }
 
   async me(id: number) {
-    const pessoa = await authRepository.buscarPorId(id);
-    if (!pessoa || !pessoa.ativo) {
-      throw new Error('Usuário não encontrado ou inativo');
+    const pessoa = await pessoasRepository.encontrarAtivaPorId(id);
+    if (!pessoa) {
+      throw new ErroHttp(401, 'Usuário não encontrado ou inativo');
     }
     return pessoa;
   }

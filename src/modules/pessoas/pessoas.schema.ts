@@ -24,6 +24,7 @@ export type AtualizarPessoaInput = z.infer<typeof atualizarPessoaSchema>;
 
 export const listarPessoasQuerySchema = z.object({
   papel: z.enum(["ADMIN", "GERENTE", "COLABORADOR"]).optional(),
+  situacao: z.enum(["ativas", "inativas", "todas"]).default("ativas"),
 });
 
 export type ListarPessoasQuery = z.infer<typeof listarPessoasQuerySchema>;

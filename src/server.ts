@@ -1,7 +1,7 @@
 // src/server.ts
-import 'dotenv-safe/config';
+import { config } from "./lib/config";
 import { app } from "./app";
 
-app.listen(3000, () => {
-  console.log("API em http://localhost:3000");
+app.listen(config.PORT, () => {
+  console.log(`API em http://localhost:${config.PORT}`);
 });
