@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import { pessoasRepository, PessoasRepository } from "./pessoas.repository";
 import { CriarPessoaInput, AtualizarPessoaInput } from "./pessoas.schema";
-import { Prisma } from "@prisma/client";
+import { Prisma, Papel } from "@prisma/client";
 
 export class PessoasService {
   constructor(private repo: PessoasRepository = pessoasRepository) {}
@@ -12,8 +12,8 @@ export class PessoasService {
     return resto;
   }
 
-  async listar() {
-    const pessoas = await this.repo.encontrarTodos();
+  async listar(papel?: Papel) {
+    const pessoas = await this.repo.encontrarTodos(papel);
     return pessoas.map((p) => this.sanitizarPessoa(p));
   }
 

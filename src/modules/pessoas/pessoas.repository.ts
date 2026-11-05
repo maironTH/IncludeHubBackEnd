@@ -1,11 +1,14 @@
 import { prisma } from "../../lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, Papel } from "@prisma/client";
 
 export class PessoasRepository {
-  // Retorna somente pessoas ativas (Soft Delete)
-  async encontrarTodos() {
+  // Retorna somente pessoas ativas (Soft Delete), opcionalmente filtrando por papel
+  async encontrarTodos(papel?: Papel) {
     return prisma.pessoa.findMany({
-      where: { ativo: true },
+      where: {
+        ativo: true,
+        ...(papel ? { papel } : {}),
+      },
       include: {
         categoria: true,
       },

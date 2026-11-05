@@ -1,14 +1,21 @@
 import { Request, Response } from "express";
+import { z } from "zod";
 import { pessoasService, PessoasService } from "./pessoas.service";
+import { listarPessoasQuerySchema } from "./pessoas.schema";
 
 export class PessoasController {
   constructor(private service: PessoasService = pessoasService) {}
 
-  listar = async (_req: Request, res: Response): Promise<void> => {
+  listar = async (req: Request, res: Response): Promise<void> => {
     try {
-      const resultado = await this.service.listar();
+      const { papel } = listarPessoasQuerySchema.parse(req.query);
+      const resultado = await this.service.listar(papel);
       res.json(resultado);
     } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(422).json({ erros: error.issues });
+        return;
+      }
       res.status(500).json({ erro: "Erro ao listar pessoas", detalhe: error.message });
     }
   };
