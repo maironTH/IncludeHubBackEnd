@@ -36,7 +36,7 @@ export class PessoasService {
     // 1. Validação de e-mail existente (independente de estar ativo ou não)
     const emailExistente = await this.repo.encontrarPorEmail(dados.email);
     if (emailExistente) {
-      throw new ErroHttp(409, "E-mail já cadastrado no sistema");
+      throw new ErroHttp(422, "E-mail já cadastrado no sistema");
     }
 
     // 2. Criptografia de senha com bcrypt
@@ -95,7 +95,7 @@ export class PessoasService {
     if (dados.email && dados.email !== pessoaExistente.email) {
       const emailEmUso = await this.repo.encontrarPorEmail(dados.email);
       if (emailEmUso && emailEmUso.id !== id) {
-        throw new ErroHttp(409, "O e-mail informado já está em uso por outra pessoa");
+        throw new ErroHttp(422, "O e-mail informado já está em uso por outra pessoa");
       }
     }
 
