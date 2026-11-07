@@ -8,7 +8,7 @@ export class ProjetosController {
   listar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const usuario = req.user!;
-      const resultado = await this.service.listarProjetos(usuario, req.query);
+      const resultado = await this.service.listarProjetos(usuario, res.locals.queryValidada);
       res.status(200).json(resultado);
     } catch (error) {
       next(error);
