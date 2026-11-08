@@ -23,7 +23,7 @@ app.use("/api/pessoas", pessoasRoutes);
 app.use("/api/categorias", categoriasRoutes);
 app.use("/api/alocacoes", alocacoesRoutes);
 app.use("/api/projetos", projetosRoutes); 
-app.use("/api/dashboard", dashboardRoutes);
+ app.use("/api/dashboard", dashboardRoutes);
 
 // Middleware de erros sempre no final
 app.use(tratarErros);
