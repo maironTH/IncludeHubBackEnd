@@ -1,4 +1,3 @@
-// src/app.ts
 import express from "express";
 import cors from "cors";
 import { authRoutes } from "./modules/auth/auth.routes";
@@ -6,7 +5,8 @@ import { pessoasRoutes } from "./modules/pessoas/pessoas.routes";
 import { categoriasRoutes } from "./modules/categorias/categorias.routes";
 import { alocacoesRoutes } from "./modules/alocacoes/alocacoes.routes";
 import { projetosRoutes } from "./modules/projetos/projetos.routes";
-import { lancamentosRoutes } from "./modules/lancamentos/lancamentos.routes"; // <-- 1. Importar
+import { lancamentosRoutes } from "./modules/lancamentos/lancamentos.routes";
+import { dashboardRoutes } from "./modules/dashboard/dashboard.routes";
 import { tratarErros } from "./middlewares/tratar-erros";
 
 export const app = express();
@@ -23,7 +23,7 @@ app.use("/api/pessoas", pessoasRoutes);
 app.use("/api/categorias", categoriasRoutes);
 app.use("/api/alocacoes", alocacoesRoutes);
 app.use("/api/projetos", projetosRoutes);
-app.use("/api/lancamentos", lancamentosRoutes); // <-- 2. Registrar rota
+app.use("/api/lancamentos", lancamentosRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
-// Middleware de erros sempre no final
 app.use(tratarErros);

@@ -1,8 +1,30 @@
-// tests/domain/semana.test.ts
 import { describe, it, expect } from "vitest";
-import { segundaDaSemana, semanaAtual, ehSegunda, somarSemanas, domingoDaSemana } from "../../src/domain/semana";
+import {
+  parseDataISO,
+  formatarDataISO,
+  segundaDaSemana,
+  ehSegunda,
+  somarSemanas,
+  domingoDaSemana,
+} from "../../src/domain/semana";
+import { ErroDominio } from "../../src/domain/erros";
 
-describe("Cálculos Puros de Domínio - Semana", () => {
+describe("Domain: semana", () => {
+  // --- Vindos da main: conversão e validação de texto ISO ---
+  it("deve converter e validar data em formato ISO AAAA-MM-DD em UTC", () => {
+    const data = parseDataISO("2026-11-02");
+    expect(data.getUTCFullYear()).toBe(2026);
+    expect(data.getUTCMonth()).toBe(10); // Novembro (0-indexed)
+    expect(data.getUTCDate()).toBe(2);
+    expect(formatarDataISO(data)).toBe("2026-11-02");
+  });
+
+  it("deve lançar ErroDominio para formato ou dia inválido", () => {
+    expect(() => parseDataISO("02/11/2026")).toThrow(ErroDominio);
+    expect(() => parseDataISO("2026-02-30")).toThrow(ErroDominio);
+  });
+
+  // --- Vindos do PR: cálculos de semana ---
   it("deve retornar a própria segunda-feira quando a data já for uma segunda", () => {
     const segunda = new Date("2026-11-09T14:30:00.000Z");
     const resultado = segundaDaSemana(segunda);
@@ -37,12 +59,6 @@ describe("Cálculos Puros de Domínio - Semana", () => {
     expect(resultado.getUTCMinutes()).toBe(0);
     expect(resultado.getUTCSeconds()).toBe(0);
     expect(resultado.getUTCMilliseconds()).toBe(0);
-  });
-
-  it("deve calcular a semanaAtual a partir da data de referência", () => {
-    const hojeMock = new Date("2026-11-13T12:00:00.000Z"); // Sexta-feira
-    const resultado = semanaAtual(hojeMock);
-    expect(resultado.toISOString()).toBe("2026-11-09T00:00:00.000Z");
   });
 
   it("deve somar semanas corretamente a partir de uma segunda-feira", () => {

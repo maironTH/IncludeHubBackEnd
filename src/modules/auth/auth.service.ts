@@ -36,6 +36,7 @@ export class AuthService {
     if (!pessoa) {
       throw new ErroHttp(401, 'Usuário não encontrado ou inativo');
     }
-    return pessoa;
+    const { senhaHash: _, ...usuarioSemSenha } = pessoa;
+    return usuarioSemSenha;
   }
 }
