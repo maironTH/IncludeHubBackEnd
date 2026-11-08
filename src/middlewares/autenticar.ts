@@ -24,18 +24,29 @@ export async function autenticar(req: Request, _res: Response, next: NextFunctio
 
   const token = header.slice("Bearer ".length);
 
+  let payload: PayloadToken;
+
+  // 1. Validar o JWT
   try {
-    const payload = jwt.verify(token, config.JWT_SECRET) as unknown as PayloadToken;
-    const usuarioAtivo = await pessoasRepository.encontrarAtivaPorId(Number(payload.id));
-
-    // Garante que se o usuário for inativado no banco, seu token para de funcionar imediatamente
-    if (!usuarioAtivo) {
-      return next(new ErroHttp(401, "Usuário inativado ou inexistente"));
-    }
-
-    req.user = { id: usuarioAtivo.id, papel: usuarioAtivo.papel };
-    next();
+    payload = jwt.verify(token, config.JWT_SECRET) as unknown as PayloadToken;
   } catch {
     return next(new ErroHttp(401, "Token inválido ou expirado"));
   }
+
+  // 2. Buscar o usuário no banco
+  let usuarioAtivo;
+  try {
+    usuarioAtivo = await pessoasRepository.encontrarAtivaPorId(Number(payload.id));
+  } catch (error) {
+    return next(error);
+  }
+
+  // Garante que se o usuário for inativado no banco, seu token para de funcionar imediatamente
+  if (!usuarioAtivo) {
+    return next(new ErroHttp(401, "Usuário inativado ou inexistente"));
+  }
+
+  // 3. Identificar usuário e continuar
+  req.user = { id: usuarioAtivo.id, papel: usuarioAtivo.papel };
+  return next();
 }
