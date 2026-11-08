@@ -63,3 +63,8 @@ export function domingoDaSemana(data: Date): Date {
     Date.UTC(segunda.getUTCFullYear(), segunda.getUTCMonth(), segunda.getUTCDate() + 6),
   )
 }
+
+// Adicionar ao final de src/domain/semana.ts:
+export function semanaAtual(hoje: Date = new Date()): SegundaFeira {
+  return segundaDaSemana(hoje)
+}
