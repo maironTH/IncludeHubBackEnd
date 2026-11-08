@@ -9,7 +9,10 @@ import { ErroDominio } from "../domain/erros";
 export function tratarErros(erro: unknown, _req: Request, res: Response, _next: NextFunction) {
   // Erros que nós mesmos lançamos
   if (erro instanceof ErroHttp) {
-    res.status(erro.status).json({ erro: erro.message });
+    res.status(erro.status).json({
+      erro: erro.message,
+      ...(erro.detalhes && erro.detalhes.length > 0 ? { detalhes: erro.detalhes } : {}),
+    });
     return;
   }
 

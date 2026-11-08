@@ -32,7 +32,7 @@ export class ProjetosController {
 
   criar = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const resultado = await this.service.criarProjeto(req.body);
+      const resultado = await this.service.criarProjeto(req.body, req.user!);
       res.status(201).json(resultado);
     } catch (error) {
       next(error);
