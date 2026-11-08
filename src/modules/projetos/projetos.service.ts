@@ -22,9 +22,10 @@ export class ProjetosService {
       // Gerente só pode ver projetos que ele gerencia (ignora qualquer gerenteId passado)
       filtrosConsulta.gerenteId = usuario.id;
     } else if (usuario.papel === "COLABORADOR") {
-      // Colaborador só visualiza projetos onde está alocado
+      // Colaborador visualiza projetos onde está alocado, mais os projetos internos ativos
       delete filtrosConsulta.gerenteId;
-      filtrosConsulta.alocadoPessoaId = usuario.id;
+      delete filtrosConsulta.alocadoPessoaId;
+      filtrosConsulta.colaboradorPessoaId = usuario.id;
     }
 
     return this.repo.listar(filtrosConsulta);
@@ -52,7 +53,7 @@ export class ProjetosService {
 
     if (usuario.papel === "COLABORADOR") {
       const estaAlocado = await this.repo.usuarioEstaAlocado(usuario.id, id);
-      if (!estaAlocado) {
+      if (!estaAlocado && projeto.tipo !== "INTERNO") {
         throw new ErroHttp(403, "Você não tem permissão para visualizar este projeto");
       }
       return projeto;
@@ -61,8 +62,8 @@ export class ProjetosService {
     return projeto;
   }
 
-  // 3. Cadastra novo projeto
-  async criarProjeto(dados: CriarProjetoInput) {
+  // 3. Cadastra novo projeto e grava a primeira linha no histórico
+  async criarProjeto(dados: CriarProjetoInput, usuario: UsuarioLogado) {
     // Validação de gerente se informado
     if (dados.gerenteId) {
       const gerente = await this.pessoasRepo.encontrarAtivaPorId(dados.gerenteId);
@@ -102,7 +103,7 @@ export class ProjetosService {
       ...(dados.gerenteId ? { gerente: { connect: { id: dados.gerenteId } } } : {}),
     };
 
-    return this.repo.criar(dadosPrisma);
+    return this.repo.criar(dadosPrisma, usuario.id);
   }
 
   // 4. Atualização e Soft Delete
@@ -167,19 +168,16 @@ export class ProjetosService {
   }
 
   // 5. Alterar Saúde do Projeto (Status + Histórico)
+  // Regra Seção 8: Admin ❌ (apenas visualiza) | Gerente ✅ (nos seus projetos) | Colaborador ❌
   async alterarStatus(id: number, dados: AlterarStatusInput, usuario: UsuarioLogado) {
     const projeto = await this.repo.encontrarPorId(id);
     if (!projeto) {
       throw new ErroHttp(404, "Projeto não encontrado ou inativo");
     }
 
-    // Validação contextual: Gerente só pode alterar status do seu próprio projeto
-    if (usuario.papel === "GERENTE" && projeto.gerenteId !== usuario.id) {
-      throw new ErroHttp(403, "Você só pode alterar o status de projetos que você gerencia");
-    }
-
-    if (usuario.papel === "COLABORADOR") {
-      throw new ErroHttp(403, "Colaboradores não podem alterar o status do projeto");
+    // Validação contextual: Apenas o Gerente do projeto pode alterar a saúde
+    if (usuario.papel !== "GERENTE" || projeto.gerenteId !== usuario.id) {
+      throw new ErroHttp(403, "Apenas o gerente responsável pode alterar a saúde deste projeto");
     }
 
     // Se ATRASADO, justificativa é obrigatória

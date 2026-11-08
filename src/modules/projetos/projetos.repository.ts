@@ -8,6 +8,7 @@ export interface FiltrosListarProjetos {
   tipo?: TipoProjeto | undefined;
   gerenteId?: number | undefined;
   alocadoPessoaId?: number | undefined;
+  colaboradorPessoaId?: number | undefined;
 }
 
 // Projeção segura do gerente para nunca expor a senhaHash
@@ -38,6 +39,12 @@ export class ProjetosRepository {
           some: { pessoaId: filtros.alocadoPessoaId },
         },
       }),
+      ...(filtros.colaboradorPessoaId && {
+        OR: [
+          { alocacoes: { some: { pessoaId: filtros.colaboradorPessoaId } } },
+          { tipo: "INTERNO" },
+        ],
+      }),
     };
 
     return prisma.projeto.findMany({
@@ -49,23 +56,47 @@ export class ProjetosRepository {
     });
   }
 
-  // Busca projeto ativo por ID
+  // Busca projeto ativo por ID com histórico de status embutido
   async encontrarPorId(id: number) {
     return prisma.projeto.findFirst({
       where: { id, ativo: true },
       include: {
         gerente: selectGerenteSeguro,
+        historicoStatus: {
+          orderBy: { criadoEm: "desc" },
+          include: {
+            alteradoPor: {
+              select: {
+                id: true,
+                nome: true,
+              },
+            },
+          },
+        },
       },
     });
   }
 
-  // Cria um novo projeto (status inicial padrão é NO_PRAZO)
-  async criar(dados: Prisma.ProjetoCreateInput) {
-    return prisma.projeto.create({
-      data: dados,
-      include: {
-        gerente: selectGerenteSeguro,
-      },
+  // Cria um novo projeto e grava a primeira linha no histórico de status em transação
+  async criar(dados: Prisma.ProjetoCreateInput, alteradoPorId: number) {
+    return prisma.$transaction(async (tx) => {
+      const projeto = await tx.projeto.create({
+        data: dados,
+        include: {
+          gerente: selectGerenteSeguro,
+        },
+      });
+
+      await tx.historicoStatus.create({
+        data: {
+          projetoId: projeto.id,
+          status: "NO_PRAZO",
+          justificativa: "Projeto criado",
+          alteradoPorId,
+        },
+      });
+
+      return projeto;
     });
   }
 
