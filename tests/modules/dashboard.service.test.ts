@@ -44,20 +44,19 @@ describe("DashboardService", () => {
 
       const resultado = await service.obter({ id: 1, papel: "ADMIN" }, "2026-11-02");
 
-      expect(resultado.periodo).toEqual({ tipo: "semana", semana: "2026-11-02" });
-      expect((resultado as any).resumo).toEqual({
+      expect(resultado.semana).toBe("2026-11-02");
+      expect(resultado).toMatchObject({
         projetosAtivos: 3,
         colaboradores: 2,
         horasRegistradas: 24,
         projetosEmRisco: 1,
       });
 
-      expect((resultado as any).distribuicaoStatus).toEqual({
-        NO_PRAZO: 1,
-        EM_RISCO: 1,
-        ATRASADO: 1,
-      });
-
+      expect((resultado as any).projetosPorStatus).toEqual([
+        { status: "NO_PRAZO", quantidade: 1 },
+        { status: "EM_RISCO", quantidade: 1 },
+        { status: "ATRASADO", quantidade: 1 },
+      ]);
       // Alertas ordenados com VERMELHO no topo
       const alertas = (resultado as any).alertas;
       expect(alertas[0].severidade).toBe("VERMELHO");
@@ -89,8 +88,8 @@ describe("DashboardService", () => {
       const resultado = await service.obter({ id: 10, papel: "GERENTE" }, "2026-11-02");
 
       expect(repoMock.projetosClienteAtivos).toHaveBeenCalledWith(10);
-      expect((resultado as any).resumo.horasRegistradas).toBe(16);
-      expect((resultado as any).resumo.projetosAtivos).toBe(1);
+      expect((resultado as any).horasRegistradas).toBe(16);
+      expect((resultado as any).projetosAtivos).toBe(1);
     });
   });
 
@@ -114,11 +113,10 @@ describe("DashboardService", () => {
 
       const resultado = await service.obter({ id: 20, papel: "COLABORADOR" }, "2026-11-02");
 
-      expect((resultado as any).resumo).toEqual({
-        meusProjetos: 2,
+      expect(resultado).toMatchObject({
+        projetosAtivos: 2,
         horasRegistradas: 18,
         ocupacaoRealizada: { percentual: 90, rotulo: "SOBRECARREGADO" },
-        horasLivres: 10,
         disponibilidadeRestante: 50,
       });
 

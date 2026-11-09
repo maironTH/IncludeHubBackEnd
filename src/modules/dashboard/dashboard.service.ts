@@ -12,6 +12,8 @@ import { ErroHttp } from "../../lib/erros";
 export type UsuarioLogado = { id: number; papel: Papel };
 export type Alerta = { severidade: "VERMELHO" | "AMARELO"; mensagem: string };
 type ProjetoResumo = { nome: string; status: StatusProjeto };
+const porSeveridade = (a: Alerta, b: Alerta) =>
+  Number(a.severidade === "AMARELO") - Number(b.severidade === "AMARELO");
 
 export class DashboardService {
   constructor(private repo: DashboardRepository = dashboardRepository) {}
@@ -30,12 +32,12 @@ export class DashboardService {
     const fim = new Date(
       Date.UTC(domingo.getUTCFullYear(), domingo.getUTCMonth(), domingo.getUTCDate(), 23, 59, 59, 999)
     );
-    const periodo = { tipo: "semana", semana: formatarDataISO(inicio) };
+    const semana = formatarDataISO(inicio);
 
     if (usuario.papel === "COLABORADOR") {
-      return { periodo, ...(await this.visaoColaborador(usuario.id, inicio, fim)) };
+      return { semana, ...(await this.visaoColaborador(usuario.id, inicio, fim)) };
     }
-    return { periodo, ...(await this.visaoGerencial(usuario, inicio, fim)) };
+    return { semana, ...(await this.visaoGerencial(usuario, inicio, fim)) };
   }
 
   // Admin (tudo) e Gerente (só os projetos sob sua gerência)
@@ -68,9 +70,7 @@ export class DashboardService {
       return {
         id: p.id,
         nome: p.nome,
-        horasSemanais: p.horasSemanais,
         ocupacaoRealizada: ocupacao.realizada,
-        ocupacaoPlanejada: ocupacao.planejada,
       };
     });
 
@@ -88,6 +88,10 @@ export class DashboardService {
       distribuicaoStatus[p.status] += 1;
     }
 
+    const projetosPorStatus = (Object.keys(distribuicaoStatus) as StatusProjeto[]).map(
+      (status) => ({ status, quantidade: distribuicaoStatus[status] })
+    );
+
     // Alertas: projetos atrasados ou em risco + colaboradores sobrecarregados (>= 90%)
     const alertas: Alerta[] = [
       ...this.alertasDeProjetos(projetos),
@@ -100,16 +104,14 @@ export class DashboardService {
     ];
 
     // Ordenação: prioridade máxima (VERMELHO) no topo
-    alertas.sort((a, b) => (a.severidade === "VERMELHO" ? -1 : 1));
+    alertas.sort(porSeveridade);
 
     return {
-      resumo: {
-        projetosAtivos: projetos.length,
-        colaboradores: pessoas.length,
-        horasRegistradas,
-        projetosEmRisco: distribuicaoStatus.EM_RISCO,
-      },
-      distribuicaoStatus,
+      projetosAtivos: projetos.length,
+      colaboradores: pessoas.length,
+      horasRegistradas,
+      projetosEmRisco: distribuicaoStatus.EM_RISCO,
+      projetosPorStatus,
       ocupacaoEquipe,
       alertas,
     };
@@ -148,16 +150,13 @@ export class DashboardService {
       ...this.alertasDeProjetos(projetos.filter((p) => p.tipo === "CLIENTE")),
     ];
 
-    alertas.sort((a, b) => (a.severidade === "VERMELHO" ? -1 : 1));
+    alertas.sort(porSeveridade);
 
     return {
-      resumo: {
-        meusProjetos: projetos.length,
-        horasRegistradas: horasLancadas,
-        ocupacaoRealizada: ocupacao.realizada,
-        horasLivres: ocupacao.horasLivres,
-        disponibilidadeRestante: ocupacao.disponibilidadeRestante,
-      },
+      projetosAtivos: projetos.length,
+      horasRegistradas: horasLancadas,
+      ocupacaoRealizada: ocupacao.realizada,
+      disponibilidadeRestante: ocupacao.disponibilidadeRestante,
       alertas,
     };
   }
