@@ -7,6 +7,7 @@ import { alocacoesRoutes } from "./modules/alocacoes/alocacoes.routes";
 import { projetosRoutes } from "./modules/projetos/projetos.routes";
 import { lancamentosRoutes } from "./modules/lancamentos/lancamentos.routes";
 import { dashboardRoutes } from "./modules/dashboard/dashboard.routes";
+import { relatoriosRoutes } from "./modules/relatorios/relatorios.routes";
 import { tratarErros } from "./middlewares/tratar-erros";
 
 export const app = express();
@@ -25,5 +26,5 @@ app.use("/api/alocacoes", alocacoesRoutes);
 app.use("/api/projetos", projetosRoutes);
 app.use("/api/lancamentos", lancamentosRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-
+app.use("/api/relatorios", relatoriosRoutes);
 app.use(tratarErros);
