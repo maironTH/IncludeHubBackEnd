@@ -8,6 +8,7 @@ const esquema = z.object({
   // Validade do token em segundos (ex.: 28800) ou formato legível (ex.: "8h", "1d")
   JWT_EXPIRES: z.union([z.coerce.number().int().positive(), z.string().min(1)]).default("8h"),
   PORT: z.coerce.number().int().positive().default(3000),
+  CORS_ORIGINS: z.string().default("http://localhost:5173")
 });
 
 const resultado = esquema.safeParse(process.env);
