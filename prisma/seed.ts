@@ -3,6 +3,15 @@ import bcrypt from "bcrypt";// hash
 
 const prisma = new PrismaClient()// conexão usada só pelo seed
 
+// Lê a senha de uma variável de ambiente e recusa senhas fracas
+function senhaObrigatoria(nome: string): string {
+  const valor = process.env[nome];
+  if (!valor || valor.length < 12) {
+    throw new Error(`Defina ${nome} com pelo menos 12 caracteres`);
+  }
+  return valor;
+}
+
 async function main() {
   //Limpa tudo (ordem importa filho->pai)
   await prisma.historicoStatus.deleteMany();
@@ -18,22 +27,24 @@ async function main() {
   const designer = await prisma.categoria.create({ data: { nome: "Trainee" } });
 
   //Pessoas
-  const senhaHash = await bcrypt.hash("senha123", 10);
+  const hashAdmin = await bcrypt.hash(senhaObrigatoria("SEED_SENHA_ADMIN"), 10);
+const hashGerente = await bcrypt.hash(senhaObrigatoria("SEED_SENHA_GERENTE"), 10);
+const hashColaborador = await bcrypt.hash(senhaObrigatoria("SEED_SENHA_COLABORADOR"), 10);
 
   await prisma.pessoa.create({
-    data: { nome: "Admin ", email: "admin@includehub.com", senhaHash,
+    data: { nome: "Admin ", email: "admin@includehub.com", senhaHash: hashAdmin,
             papel: "ADMIN", horasSemanais: 20 },
   });
   const gerente = await prisma.pessoa.create({
-    data: { nome: "Gabriela Gerente", email: "gerente@includehub.com", senhaHash,
+    data: { nome: "Gabriela Gerente", email: "gerente@includehub.com", senhaHash: hashGerente,
             papel: "GERENTE", categoriaId: consultor.id, horasSemanais: 20 },
   });
   const ana = await prisma.pessoa.create({
-    data: { nome: "Ana Dev", email: "ana@includehub.com", senhaHash,
+    data: { nome: "Ana Dev", email: "ana@includehub.com", senhaHash: hashColaborador,
             papel: "COLABORADOR", categoriaId: dev.id, horasSemanais: 20 },
   });
   const beto = await prisma.pessoa.create({
-    data: { nome: "Beto Design", email: "beto@includehub.com", senhaHash,
+    data: { nome: "Beto Design", email: "beto@includehub.com", senhaHash: hashColaborador,
             papel: "COLABORADOR", categoriaId: designer.id, horasSemanais: 15 },
   });
 
