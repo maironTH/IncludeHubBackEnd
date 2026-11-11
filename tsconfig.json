@@ -32,6 +32,9 @@
     // "noFallthroughCasesInSwitch": true,
     // "noPropertyAccessFromIndexSignature": true,
 
+    "outDir": "dist",
+    "rootDir": "src",
+
     // Recommended Options
     "strict": true,
     "jsx": "react-jsx",
@@ -40,5 +43,6 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-  }
+  },
+  "include": ["src"]
 }

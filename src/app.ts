@@ -9,9 +9,10 @@ import { lancamentosRoutes } from "./modules/lancamentos/lancamentos.routes";
 import { dashboardRoutes } from "./modules/dashboard/dashboard.routes";
 import { relatoriosRoutes } from "./modules/relatorios/relatorios.routes";
 import { tratarErros } from "./middlewares/tratar-erros";
+import { config } from "./lib/config";
 
 export const app = express();
-app.use(cors());
+app.use(cors({ origin: config.CORS_ORIGINS.split(",").map((o) => o.trim()) }));
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
