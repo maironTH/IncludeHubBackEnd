@@ -66,40 +66,40 @@ export class LancamentosRepository {
 
   // Grava em lote via Upsert numa única transação atômica
   async salvarEmLote(pessoaId: number, semanaInicio: Date, itens: ItemLancamentoLote[]) {
-    const operacoes = itens.map((item) =>
-      prisma.lancamento.upsert({
-        where: {
-          pessoaId_projetoId_semanaInicio: {
-            pessoaId,
-            projetoId: item.projetoId,
-            semanaInicio,
-          },
-        },
-        update: {
-          horas: item.horas,
-          descricao: item.descricao ?? null,
-        },
-        create: {
-          pessoaId,
-          projetoId: item.projetoId,
-          semanaInicio,
-          horas: item.horas,
-          descricao: item.descricao ?? null,
-        },
-        include: {
-          pessoa: selectPessoaSegura,
-          projeto: selectProjetoSeguro,
-        },
-      })
-    );
+    const idsParaRemover = itens.filter((i) => i.horas === 0).map((i) => i.projetoId);
+    const paraGravar = itens.filter((i) => i.horas > 0);
 
-    const resultados = await prisma.$transaction(operacoes);
+    const salvos = await prisma.$transaction(async (tx) => {
+      // Se não existir lançamento nesses projetos, nada acontece (sem erro)
+      if (idsParaRemover.length > 0) {
+        await tx.lancamento.deleteMany({
+          where: { pessoaId, semanaInicio, projetoId: { in: idsParaRemover } },
+        });
+      }
 
-    return resultados.map((l) => ({
-      ...l,
-      horas: Number(l.horas),
-    }));
+      const resultado = [];
+      for (const item of paraGravar) {
+        resultado.push(
+          await tx.lancamento.upsert({
+            where: {
+              pessoaId_projetoId_semanaInicio: { pessoaId, projetoId: item.projetoId, semanaInicio },
+            },
+            update: { horas: item.horas, descricao: item.descricao ?? null },
+            create: {
+              pessoaId,
+              projetoId: item.projetoId,
+              semanaInicio,
+              horas: item.horas,
+              descricao: item.descricao ?? null,
+            },
+            include: { pessoa: selectPessoaSegura, projeto: selectProjetoSeguro },
+          })
+        );
+      }
+      return resultado;
+    });
+
+    return salvos.map((l) => ({ ...l, horas: Number(l.horas) }));
   }
 }
-
 export const lancamentosRepository = new LancamentosRepository();

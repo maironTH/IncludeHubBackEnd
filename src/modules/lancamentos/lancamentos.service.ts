@@ -59,25 +59,27 @@ export class LancamentosService {
     }
 
     // D. Validação atômica pré-gravação: nenhum registro é salvo se algum item falhar
+     const itensComHoras = dados.itens.filter((item) => item.horas > 0);
+
     await Promise.all(
-      dados.itens.map(async (item) => {
+      itensComHoras.map(async (item) => {
         // Valida se o projeto existe e está ativo (422)
         const projeto = await this.projetosRepo.encontrarPorId(item.projetoId);
         if (!projeto) {
           throw new ErroHttp(422, `Projeto com ID ${item.projetoId} inexistente ou inativo`);
         }
 
-        // Valida alocação no projeto:
-        // Colaboradores só podem lançar nos projetos onde estão alocados
-        // Gerentes podem lançar se estiverem alocados ou forem o gerente responsável
-        const estaAlocado =
-          (await this.projetosRepo.usuarioEstaAlocado(usuario.id, item.projetoId)) ||
-          (usuario.papel === "GERENTE" && projeto.gerenteId === usuario.id);
+        // Pode lançar quem: (a) está alocado, (b) é o gerente do projeto
+        // ou (c) o projeto é interno (e ativo, já garantido acima)
+        const podeLancar =
+          projeto.tipo === "INTERNO" ||
+          projeto.gerenteId === usuario.id ||
+          (await this.projetosRepo.usuarioEstaAlocado(usuario.id, item.projetoId));
 
-        if (!estaAlocado) {
+        if (!podeLancar) {
           throw new ErroHttp(
             403,
-            `Você não tem permissão para lançar horas no projeto "${projeto.nome}". Você só pode lançar horas nos projetos em que está alocado.`
+            `Você não tem permissão para lançar horas no projeto "${projeto.nome}". Você só pode lançar horas nos projetos em que está alocado, nos que gerencia e nos internos.`
           );
         }
       })
